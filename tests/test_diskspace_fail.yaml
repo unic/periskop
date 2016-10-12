@@ -1,0 +1,12 @@
+test_name: diskspace should fail
+bot_name: roboto
+timeout: 10
+slack:
+  channel: "#stackaton"
+  as_user: roberterdin
+  text: "!diskspace infra-dev-bei.p.unic24.net /var"
+expect:
+  regex: true
+  attachments:
+    text: |
+      .*{u'failures': 1, u'skipped': 1, u'ok': 4, u'unreachable': 0, u'changed': 1}.*
