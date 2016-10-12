@@ -1,0 +1,4 @@
+slack_token:
+as_user: roberterdin
+bot_name: roboto
+channel: "#stackaton"
