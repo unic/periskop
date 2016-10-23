@@ -1,4 +1,5 @@
-slack_token:
+tests_dir: /opt/periskop/tests
+slack_token: xoxp-123-secret
 as_user: roberterdin
 bot_name: roboto
 channel: "#stackaton"

@@ -1,5 +1,0 @@
-requests==2.11.1
-six==1.10.0
-slackclient==1.0.2
-websocket-client==0.37.0
-wheel==0.24.0
