@@ -1,9 +1,11 @@
 import os
 import time
 import re
+from logging.config import fileConfig
+
 import yaml
-import slack_adapter
-from slackclient import SlackClient
+import logging
+from slack_adapter import SlackAdapter
 
 # Configuration
 _script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
@@ -16,12 +18,17 @@ _tests_dir = os.path.join(os.path.dirname(__file__), '..', 'tests')
 _YAML_PATTERN = r'.+\.yaml'
 _DEFAULT_TIMEOUT = 30
 
+fileConfig('../logging_config.ini')
+logger = logging.getLogger('periskop')
+# logger.setLevel(logging.DEBUG)
+# ch = logging.StreamHandler(sys.stdout)
+# ch.setLevel(logging.DEBUG)
+# logger.addHandler(ch)
 
-# sc = SlackClient(_config['slack_token'])
 
 class Periskop:
     def __init__(self):
-        self.slack = slack_adapter.SlackAdapter(_config['slack_token'])
+        self.slack = SlackAdapter(_config['slack_token'])
         pass
 
     def run(self):
@@ -32,60 +39,58 @@ class Periskop:
                 with open(os.path.join(_tests_dir, test_file_name)) as test_file:
                     test = yaml.load(test_file)
 
-                bot = self.slack.get_user_by_name(_config['bot_name']) \
-                    if 'bot_name' in _config \
-                    else self.slack.get_user_by_name(test['bot_name'])
+                self.validate(results, test)
 
-                timeout = test['timeout'] if 'timeout' in test else _DEFAULT_TIMEOUT
+        self.post_result(results)
 
-                if self.slack.sc.rtm_connect():
-                    self.slack.sc.api_call("chat.postMessage", **test['slack'])
-                    success = False
-                    elapsed_time = 0
+    def validate(self, results, test):
+        bot = self.slack.get_user_by_name(_config['bot_name']) \
+            if 'bot_name' in _config \
+            else self.slack.get_user_by_name(test['bot_name'])
+        timeout = test['timeout'] if 'timeout' in test else _DEFAULT_TIMEOUT
+        if self.slack.sc.rtm_connect():
+            self.slack.sc.api_call("chat.postMessage", **test['slack'])
+            success = False
+            elapsed_time = 0
 
-                    while not success and elapsed_time < timeout:
-                        update = self.slack.sc.rtm_read()
-                        print update
-                        if len(update) > 0 and 'attachments' in update[0] and update[0]['user'] == bot['id']:
-                            # message is from bot
+            while not success and elapsed_time < timeout:
+                update = self.slack.sc.rtm_read()
+                logger.debug("RTM: " + str(update))
+                if len(update) > 0 and 'attachments' in update[0] and update[0]['user'] == bot['id']:
+                    # message is from bot
 
-                            given = update[0]['attachments'][0]['text'].replace('\n', '')
-                            expected = test['expect']['attachments']['text'].replace('\\n', '').replace('\n', '')
+                    given = update[0]['attachments'][0]['text'].replace('\n', '')
+                    expected = test['expect']['attachments']['text'].replace('\\n', '').replace('\n', '')
 
-                            print "given \ expected"
-                            print given
-                            print expected
-                            if 'regex' in test['expect'] and test['expect']['regex']:
-                                if re.match(expected, given):
-                                    # test successful
-                                    print test['test_name'] + ": passed"
-                                    success = True
-                                    results[test['test_name']] = "passed"
-                                    self.slack.send_message(test['test_name'] + ": passed", **test['slack'])
-                            else:
-                                if expected == given:
-                                    # test successful
-                                    print test['test_name'] + ": passed"
-                                    success = True
-                                    results[test['test_name']] = "passed"
-                                    self.slack.send_message(test['test_name'] + ": passed", **test['slack'])
+                    if 'regex' in test['expect'] and test['expect']['regex']:
+                        if re.match(expected, given):
+                            # test successful
+                            logger.info(test['test_name'] + ": passed")
+                            success = True
+                            results[test['test_name']] = "passed"
+                            self.slack.send_message(test['test_name'] + ": passed", **test['slack'])
+                    else:
+                        if expected == given:
+                            # test successful
+                            logger.info(test['test_name'] + ": passed")
+                            success = True
+                            results[test['test_name']] = "passed"
+                            self.slack.send_message(test['test_name'] + ": passed", **test['slack'])
 
-                                else:
-                                    # just continue until the timeout for now
-                                    pass
-                        elapsed_time += 1
-                        time.sleep(1)
+                        else:
+                            # just continue until the timeout for now
+                            pass
+                elapsed_time += 1
+                time.sleep(1)
 
-                    # timeout reached
-                    if not success:
-                        results[test['test_name']] = "failed"
-                        self.slack.send_message(test['test_name'] + ": failed. Timeout reached.", **test['slack'])
-                else:
-                    print "Connection Failed, invalid token?"
+            # timeout reached
+            if not success:
+                results[test['test_name']] = "failed"
+                self.slack.send_message(test['test_name'] + ": failed. Timeout reached.", **test['slack'])
+        else:
+            logger.error("Connection Failed, invalid token?")
 
-        # all tests ran
-
-        #
+    def post_result(self, results):
         attachments = []
         for key, value in results.iteritems():
             attachments.append({
