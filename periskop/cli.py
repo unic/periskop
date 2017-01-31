@@ -2,6 +2,7 @@
 from logging.config import fileConfig
 
 import click
+import sys
 import os
 import yaml
 import re
@@ -10,18 +11,24 @@ import logging
 from slackclient import SlackClient
 
 # Configuration
-_script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
+_cwd = os.getcwd()
 _config_file_name = "config.yaml"
-_abs_file_path = os.path.join(_script_dir, '..', _config_file_name)
+_abs_file_path = os.path.join(_cwd, _config_file_name)
+if not os.path.isfile(_abs_file_path):
+    if os.path.isfile('/etc/periskop/config.yaml'):
+        _abs_file_path = '/etc/periskop/config.yaml'
+    else:
+        print('No config found, in "{0}" or "/etc/periskop/config.yaml"'.format(_abs_file_path))
+        sys.exit(1)
+
 with open(_abs_file_path) as _config_file:
     _config = yaml.load(_config_file)
 
 logger = logging.getLogger('periskop')
 
-_YAML_PATTERN = r'.+\.yaml'
+_YAML_PATTERN = r'test_.+\.yaml'
 _DEFAULT_TIMEOUT = 30
 
-fileConfig('../logging_config.ini')
 _tests = {}
 _results = {}
 _global_conf = {}
@@ -146,8 +153,7 @@ def run_all():
 
 @click.group()
 @click.option('--tests-directory', '-d',
-              default=_config.get('tests_dir', ''),
-              prompt=False if _config['tests_dir'] else True,
+              default=os.getcwd(),
               show_default=True,
               help='The directory containing the test files')
 def main(tests_directory):
