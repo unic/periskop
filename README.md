@@ -74,17 +74,24 @@ slack:
 We can not only specify text but use the full set of arguments defined here: [Slack PostMessage API](https://api.slack.com/methods/chat.postMessage#arguments)
 
 ### Test Condition
-We can test either for a full text match or for regex.
+We can test either for a full text match or for regex. The test allows for specification of the complete [message event type](https://api.slack.com/events/message). 
+Instead of checking for the attachment you may as well check for the text:
+```
+expect:
+  regex: true
+  text: |
+    .*ok.*
+```
 
 #### RegEx
 ```
-test_name: diskspace
-bot_name: roboto
+test_name: chatops_diskspace
+bot_name: mrrobot
 timeout: 60
 slack:
-  channel: "#stackaton"
-  as_user: roberterdin
-  text: "!diskspace infra-dev-bei.p.unic24.net /var"
+  channel: "#periskop"
+  as_user: periskop-user
+  text: "!diskspace mymachine /var"
 expect:
   regex: true
   attachments:
@@ -95,17 +102,17 @@ expect:
 #### Full match
 ```
 test_name: status command
-bot_name: roboto
+bot_name: mrrobot
 timeout: 300
 slack:
-  channel: "#stackaton"
-  as_user: roberterdin
-  text: "!status infra-dev-bei.p.unic24.net"
+  channel: "#periskop"
+  as_user: periskop-user
+  text: "!status mymachine"
 expect:
   attachments:
     text: |
-      ```<http://infra-dev-bei.p.unic24.net|infra-dev-bei.p.unic24.net> | SUCCESS =&gt; {\n    "changed": false, \n    "ping": "pong"\n}```
-  text: "@roberterdin: Here is your status for `<http://infra-dev-bei.p.unic24.net>` host(s):"`
+      ```<http://mymachine> | SUCCESS =&gt; {\n    "changed": false, \n    "ping": "pong"\n}```
+  text: "@mrrobot: Here is your status for `<http://mymachine>` host(s):"`
 ```
 
 
@@ -113,5 +120,30 @@ expect:
 ```
 git clone https://github.com/unic/periskop.git
 python setup.py develop
-pip install -e .[dev]
+```
+
+### PyPi
+If you want to update the PyPi package, make sure you have a valid `~/.pypirc` configuration:
+```
+[distutils]
+index-servers =
+  pypi
+  pypitest
+
+[pypi]
+repository=https://pypi.python.org/pypi
+username=your_username
+password=your_password
+
+[pypitest]
+repository=https://testpypi.python.org/pypi
+username=your_username
+password=your_password
+```
+
+Then execute
+```
+pip install pypandoc
+brew install pandoc
+python setup.py register -r pypi
 ```
