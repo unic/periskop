@@ -19,8 +19,6 @@ _DEFAULT_TIMEOUT = 30
 
 _tests = {}
 _results = {}
-_global_conf = {}
-
 
 def _get_channel_by_name(slack, name):
     response = slack.api_call("channels.list")
@@ -37,15 +35,15 @@ def _get_user_by_name(slack, name):
 
 
 def _validate(test):
-    slack = SlackClient(_global_conf['slack_token'])
+    slack = SlackClient(_config['slack_token'])
 
-    bot = _get_user_by_name(slack, _global_conf['username']) \
+    bot = _get_user_by_name(slack, _config['username']) \
         if 'bot_name' not in test \
         else _get_user_by_name(slack, test['bot_name'])
 
     # figure out which values to pass
-    test['slack']['channel'] = test['slack'].get('channel', _global_conf['channel'])
-    test['slack']['as_user'] = test['slack'].get('as_user', _global_conf['as_user'])
+    test['slack']['channel'] = test['slack'].get('channel', _config['channel'])
+    test['slack']['as_user'] = test['slack'].get('as_user', _config['as_user'])
 
     timeout = test.get('timeout', _DEFAULT_TIMEOUT)
 
@@ -93,7 +91,7 @@ def _validate(test):
 def _report_test(test, passed, slack):
 
     # overwrite globals with test specifics
-    merged = _global_conf.copy()
+    merged = _config.copy()
     merged.update(test['slack'])
     merged.pop('text', None)
     merged['as_user'] = 'false'
@@ -113,7 +111,7 @@ def _report_test(test, passed, slack):
 
 
 def _post_result():
-    slack = SlackClient(_global_conf['slack_token'])
+    slack = SlackClient(_config['slack_token'])
     attachments = []
     for key, value in _results.iteritems():
         attachments.append({
@@ -121,7 +119,7 @@ def _post_result():
             'text': value,
             'color': ('danger' if value != 'passed' else 'good')
         })
-    formatted_result = _global_conf.copy()
+    formatted_result = _config.copy()
     formatted_result.update({
         'title': 'Execution Results',
         'attachments': attachments,
@@ -193,12 +191,13 @@ def main(tests_directory):
 @click.argument('name', default='')
 def run(all, slack_token, as_user, bot_name, channel, name):
     """Execute Tests"""
-    # write all values into _global_conf so it is accessible
+    # write all values into _config so it is accessible
     # global conf can then be overwritten by specific test configs
-    _global_conf['slack_token'] = slack_token
-    _global_conf['as_user'] = as_user
-    _global_conf['username'] = bot_name
-    _global_conf['channel'] = channel
+    global _config
+    _config['slack_token'] = slack_token if slack_token else _config['slack_token']
+    _config['as_user'] = as_user if as_user else _config['as_user']
+    _config['username'] = bot_name if bot_name else _config['bot_name']
+    _config['channel'] = channel if channel else _config['channel']
 
     if all:
         click.echo('Running all tests... ')
