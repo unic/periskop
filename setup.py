@@ -13,7 +13,7 @@ dependencies = ['click', 'pyyaml', 'requests', 'websocket-client', 'slackclient'
 
 setup(
     name='periskop',
-    version='0.0.9',
+    version='1.0.0',
     url='https://github.com/unic/periskop',
     license='Apache License 2.0',
     author='Unic AG - Robert Erdin, Mathias Petermann, Nicolas Baer',
