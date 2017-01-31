@@ -1,14 +1,4 @@
 from slackclient import SlackClient
-import os
-import yaml
-
-_script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-_config_file_name = "config.yaml"
-_abs_file_path = os.path.join(_script_dir, '..', _config_file_name)
-
-# Configuration
-with open(_abs_file_path) as _config_file:
-    _config = yaml.load(_config_file)
 
 
 class SlackAdapter:
@@ -29,7 +19,7 @@ class SlackAdapter:
                 print user
                 return user
 
-    def send_message(self, text_prio, as_user=_config['as_user'], channel=_config['channel'], **kwargs):
+    def send_message(self, text_prio, as_user, channel, **kwargs):
         if 'text' in kwargs:
             kwargs.pop('text')
         self.sc.api_call("chat.postMessage", channel=channel,
