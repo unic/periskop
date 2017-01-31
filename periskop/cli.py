@@ -147,7 +147,8 @@ def main(tests_directory):
     Options are prioritised in the following order: \b
     1) test specific arguments
     2) cli arguments
-    3) global config file
+    3) config file in current working directory
+    4) global config file in "/etc/periskop/"
 
     """
     # Configuration
