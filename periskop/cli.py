@@ -12,7 +12,10 @@ import time
 import logging
 from slackclient import SlackClient
 
+
+levels = [logging.ERROR, logging.INFO, logging.DEBUG]
 logger = logging.getLogger('periskop')
+logger.addHandler(logging.StreamHandler())
 
 _YAML_PATTERN = r'test_.+\.yaml'
 _DEFAULT_TIMEOUT = 30
@@ -144,7 +147,8 @@ def run_all():
 @click.option('--tests-directory', '-d',
               default=os.getcwd(),
               help='The directory containing the test files. [default: current working directory]')
-def main(tests_directory):
+@click.option('-v', '--verbose', count=True)
+def main(tests_directory, verbose):
     """Integration testing for ChatOps via Slack
 
     \b
@@ -156,6 +160,7 @@ def main(tests_directory):
 
     """
     # Configuration
+    logger.setLevel(levels[verbose])
     global _config
     _cwd = os.getcwd()
     _config_file_name = "config.yaml"
