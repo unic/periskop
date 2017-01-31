@@ -59,11 +59,16 @@ def _validate(test):
                 bar.update(1)
                 update = slack.rtm_read()
                 logger.debug("RTM: " + str(update))
-                if len(update) > 0 and 'attachments' in update[0] and update[0]['user'] == bot['id']:
+                if len(update) > 0 and 'user' in update[0] and update[0]['user'] == bot['id']:
                     # message is from bot
 
-                    given = update[0]['attachments'][0]['fallback'].replace('\n', '')
-                    expected = test['expect']['attachments']['text'].replace('\\n', '').replace('\n', '')
+                    if 'attachements' in test['expect']:
+                        expected = test['expect']['attachments']['text'].replace('\\n', '').replace('\n', '')
+                        given = update[0]['attachments'][0]['fallback'].replace('\n', '')
+                    elif 'text' in test['expect']:
+                        expected = test['expect']['text'].replace('\\n', '').replace('\n', '')
+                        given = update[0]['text'].replace('\n', '')
+
                     if 'regex' not in test['expect'] or not test['expect']['regex']:
                         # wrap proved string
                         expected = r"^" + expected + r"$"
@@ -71,9 +76,7 @@ def _validate(test):
                         # test successful
                         success = True
                         bar.update(timeout)
-                    else:
-                        # just continue until the timeout for now
-                        pass
+
                 time.sleep(1)
 
             if success:
