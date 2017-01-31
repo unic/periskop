@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from logging.config import fileConfig
 
 import click
 import sys
@@ -9,20 +8,6 @@ import re
 import time
 import logging
 from slackclient import SlackClient
-
-# Configuration
-_cwd = os.getcwd()
-_config_file_name = "config.yaml"
-_abs_file_path = os.path.join(_cwd, _config_file_name)
-if not os.path.isfile(_abs_file_path):
-    if os.path.isfile('/etc/periskop/config.yaml'):
-        _abs_file_path = '/etc/periskop/config.yaml'
-    else:
-        print('No config found, in "{0}" or "/etc/periskop/config.yaml"'.format(_abs_file_path))
-        sys.exit(1)
-
-with open(_abs_file_path) as _config_file:
-    _config = yaml.load(_config_file)
 
 logger = logging.getLogger('periskop')
 
@@ -154,8 +139,7 @@ def run_all():
 @click.group()
 @click.option('--tests-directory', '-d',
               default=os.getcwd(),
-              show_default=True,
-              help='The directory containing the test files')
+              help='The directory containing the test files. [default: current working directory]')
 def main(tests_directory):
     """Integration testing for ChatOps via Slack
 
@@ -163,9 +147,25 @@ def main(tests_directory):
     Options are prioritised in the following order: \b
     1) test specific arguments
     2) cli arguments
-    3) global config file
+    3) config file in current working directory
+    4) global config file in "/etc/periskop/"
 
     """
+    # Configuration
+    global _config
+    _cwd = os.getcwd()
+    _config_file_name = "config.yaml"
+    _abs_file_path = os.path.join(_cwd, _config_file_name)
+    if not os.path.isfile(_abs_file_path):
+        if os.path.isfile('/etc/periskop/config.yaml'):
+            _abs_file_path = '/etc/periskop/config.yaml'
+        else:
+            print('No config found, in "{0}" or "/etc/periskop/config.yaml"'.format(_abs_file_path))
+            sys.exit(1)
+
+    with open(_abs_file_path) as _config_file:
+        _config = yaml.load(_config_file)
+
     global _tests_dir
     _tests_dir = tests_directory
 
@@ -180,20 +180,13 @@ def main(tests_directory):
 @main.command()
 @click.option('--all', is_flag=True)
 @click.option('--slack-token', '-t',
-              default=_config.get('slack_token', ''),
               hide_input=True, help='Slack token (default hidden)')
 @click.option('--bot-name', '-b',
-              default=_config.get('bot_name', ''),
-              help='The name of the bot to post test results from.',
-              show_default=True)
+              help='The name of the bot to post test results from.')
 @click.option('--as-user', '-u',
-              default=_config.get('as_user', ''),
-              help='The name of the user to send test commands.',
-              show_default=True)
+              help='The name of the user to send test commands.')
 @click.option('--channel', '-c',
-              default=_config.get('channel', ''),
-              help='Channel to run tests in.',
-              show_default=True)
+              help='Channel to run tests in.')
 @click.argument('name', default='')
 def run(all, slack_token, as_user, bot_name, channel, name):
     """Execute Tests"""
