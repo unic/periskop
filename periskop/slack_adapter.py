@@ -1,3 +1,7 @@
+#
+# Copyright 2017 Unic AG
+#
+
 from slackclient import SlackClient
 
 

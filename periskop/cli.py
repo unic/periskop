@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#
+# Copyright 2017 Unic AG
+#
 
 import click
 import sys

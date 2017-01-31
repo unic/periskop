@@ -1,3 +1,7 @@
+#
+# Copyright 2017 Unic AG
+#
+
 import os
 import time
 from logging.config import fileConfig
